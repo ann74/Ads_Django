@@ -9,4 +9,8 @@ urlpatterns = [
     path('cat/<int:pk>/', views.CatDetailView.as_view()),
     path('ad/create/', views.AdsCreateView.as_view()),
     path('cat/create/', views.CatCreateView.as_view()),
+    path('ad/<int:pk>/update/', views.AdsUpdateView.as_view()),
+    path('cat/<int:pk>/update/', views.CatUpdateView.as_view()),
+    path('ad/<int:pk>/delete/', views.AdsDeleteView.as_view()),
+    path('cat/<int:pk>/delete/', views.CatDeleteView.as_view()),
 ]

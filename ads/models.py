@@ -91,7 +91,7 @@ class AdsEncoder(DjangoJSONEncoder):
                     'description': o.description,
                     'is_published': o.is_published,
                     'image': o.image.url if o.image else None,
-                    'category': o.category_id}
+                    'category_id': o.category_id}
         return super().default(o)
 
 
@@ -101,4 +101,5 @@ class CatEncoder(DjangoJSONEncoder):
             return {'id': o.id,
                     'name': o.name}
         return super().default(o)
+
 
