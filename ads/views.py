@@ -60,17 +60,17 @@ class CatDetailView(DetailView):
 @method_decorator(csrf_exempt, name='dispatch')
 class AdsCreateView(CreateView):
     model = Ads
-    fields = ['name', 'author', 'price', 'description', 'address', 'is_published']
+    fields = ['name', 'author', 'price', 'description', 'is_published', 'category']
 
     def post(self, request, *args, **kwargs):
         ad_data = json.loads(request.body)
         ad = Ads.objects.create(
             name=ad_data['name'],
-            author=ad_data['author'],
+            author_id=ad_data['author'],
             price=ad_data['price'],
             description=ad_data['description'],
-            address=ad_data['address'],
             is_published=ad_data['is_published'],
+            category_id=ad_data['category'],
         )
 
         return JsonResponse(ad, safe=False, encoder=AdsEncoder)
