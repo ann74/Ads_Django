@@ -77,7 +77,7 @@ class UsersEncoder(DjangoJSONEncoder):
                     'last_name': o.last_name,
                     'role': o.role,
                     'age': o.age,
-                    'locations': list(o.locations.all().values_list("name", flat=True))}
+                    'locations': list(map(str, o.locations.all()))}
         return super().default(o)
 
 

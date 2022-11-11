@@ -198,7 +198,7 @@ class UserAdsDetailView(View):
                               'last_name': user.last_name,
                               'role': user.role,
                               'age': user.age,
-                              'locations': list(user.locations.all().values_list("name", flat=True)),
+                              'locations': list(map(str, user.locations.all())),
                               'total_ads': user.total_ads
                           } for user in page_obj),
             "page": page_number,
