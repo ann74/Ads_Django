@@ -1,41 +1,45 @@
 import json
 
-from django.db.models import ProtectedError
+from django.core.paginator import Paginator
+from django.db.models import ProtectedError, Count, Q
 from django.http import JsonResponse, Http404
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
-from ads.models import Ads, Categories, AdsEncoder, CatEncoder
+from Ads_Django import settings
+from ads.models import Ads, Categories, AdsEncoder, CatEncoder, Users, UsersEncoder, Location
 
 
 def index(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
-class AdsListView(ListView):
-    model = Ads
+# Общий класс для отображения списка объявлений, категорий и пользователей, с пагинацией
+class ModelListView(ListView):
+    encoder = None
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
-        response = [ad for ad in self.object_list]
 
-        return JsonResponse(response, safe=False, encoder=AdsEncoder)
+        paginator = Paginator(self.object_list, settings.TOTAL_ON_PAGE)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        response = {
+            "items": list(page_obj),
+            "page": page_number,
+            "num_pages": paginator.num_pages,
+            "total": paginator.count
+        }
+
+        return JsonResponse(response, safe=False, encoder=self.encoder)
 
 
-class CatListView(ListView):
-    model = Categories
-
-    def get(self, request, *args, **kwargs):
-        super().get(request, *args, **kwargs)
-        response = [cat for cat in self.object_list]
-
-        return JsonResponse(response, safe=False, encoder=CatEncoder)
-
-
-class AdsDetailView(DetailView):
-    model = Ads
+# Общий класс для отображения одного объявления, категории и пользователя
+class ModelDetailView(DetailView):
+    encoder = None
 
     def get(self, request, *args, **kwargs):
         try:
@@ -43,19 +47,7 @@ class AdsDetailView(DetailView):
         except Http404:
             return JsonResponse({"error": "Not found"}, status=404)
 
-        return JsonResponse(ad, safe=False, encoder=AdsEncoder)
-
-
-class CatDetailView(DetailView):
-    model = Categories
-
-    def get(self, request, *args, **kwargs):
-        try:
-            cat = self.get_object()
-        except Http404:
-            return JsonResponse({"error": "Not found"}, status=404)
-
-        return JsonResponse(cat, safe=False, encoder=CatEncoder)
+        return JsonResponse(ad, safe=False, encoder=self.encoder)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -87,6 +79,29 @@ class CatCreateView(CreateView):
         cat = Categories.objects.create(name=cat_data['name'])
 
         return JsonResponse(cat, safe=False, encoder=CatEncoder)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UserCreateView(CreateView):
+    model = Users
+    fields = ['username', 'password', 'first_name', 'last_name', 'role', 'age', 'locations']
+
+    def post(self, request, *args, **kwargs):
+        user_data = json.loads(request.body)
+        user = Users.objects.create(
+            username=user_data['username'],
+            first_name=user_data['first_name'],
+            last_name=user_data['last_name'],
+            password=user_data['password'],
+            role=user_data['role'],
+            age=user_data['age'],
+        )
+        for loc in user_data['locations']:
+            loc_obj, created = Location.objects.get_or_create(name=loc)
+            user.locations.add(loc_obj)
+            user.save()
+
+        return JsonResponse(user, safe=False, encoder=UsersEncoder)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -122,19 +137,30 @@ class CatUpdateView(UpdateView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class AdsDeleteView(DeleteView):
-    model = Ads
-    success_url = '/'
+class UserUpdateView(UpdateView):
+    model = Users
+    fields = ['username', 'password', 'first_name', 'last_name', 'age', 'locations']
 
-    def delete(self, request, *args, **kwargs):
-        super().delete(request, *args, **kwargs)
+    def patch(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        user_data = json.loads(request.body)
+        self.object.username = user_data['username']
+        self.object.first_name = user_data['first_name']
+        self.object.last_name = user_data['last_name']
+        self.object.password = user_data['password']
+        self.object.age = user_data['age']
 
-        return JsonResponse({"status": "ok"}, status=200)
+        for loc in user_data['locations']:
+            loc_obj, created = Location.objects.get_or_create(name=loc)
+            self.object.locations.add(loc_obj)
+            self.object.save()
+
+        return JsonResponse(self.object, safe=False, encoder=UsersEncoder)
 
 
+# Общий класс для удаления объявления, категории и пользователя
 @method_decorator(csrf_exempt, name='dispatch')
-class CatDeleteView(DeleteView):
-    model = Categories
+class ModelDeleteView(DeleteView):
     success_url = '/'
 
     def delete(self, request, *args, **kwargs):
@@ -142,6 +168,35 @@ class CatDeleteView(DeleteView):
             super().delete(request, *args, **kwargs)
             return JsonResponse({"status": "ok"}, status=200)
         except ProtectedError:
-            return JsonResponse({"result": "Not deleted"}, status=404)
+            return JsonResponse({"status": "Not deleted"}, status=404)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AdsImageView(UpdateView):
+    model = Ads
+    fields = ['name', 'image']
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.image = request.FILES['image']
+        self.object.save()
+
+        return JsonResponse(self.object, safe=False, encoder=AdsEncoder)
+
+
+class UserAdsDetailView(View):
+    def get(self, request):
+        user_qs = Users.objects.annotate(total_ads=Count('ads'), filter=Q(ads__is_published=True))
+        paginator = Paginator(user_qs, settings.TOTAL_ON_PAGE)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        response = {
+            "items": list(page_obj),
+            "page": page_number,
+            "num_pages": paginator.num_pages,
+            "total": paginator.count
+        }
+
+        return JsonResponse(response, safe=False, encoder=UsersEncoder)
 
 
