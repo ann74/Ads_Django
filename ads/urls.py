@@ -21,4 +21,5 @@ urlpatterns = [
     path('cat/<int:pk>/delete/', views.ModelDeleteView.as_view(model=Categories)),
     path('user/<int:pk>/delete/', views.ModelDeleteView.as_view(model=Users)),
     path('ad/<int:pk>/upload_image/', views.AdsImageView.as_view()),
+    path('user/Z/', views.UserAdsDetailView.as_view()),
 ]

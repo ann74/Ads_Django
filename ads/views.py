@@ -3,7 +3,6 @@ import json
 from django.core.paginator import Paginator
 from django.db.models import ProtectedError, Count, Q
 from django.http import JsonResponse, Http404
-from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -184,19 +183,27 @@ class AdsImageView(UpdateView):
         return JsonResponse(self.object, safe=False, encoder=AdsEncoder)
 
 
+# Класс для вывода пользователей м количеством опубликованных объявлений у каждого
 class UserAdsDetailView(View):
     def get(self, request):
-        user_qs = Users.objects.annotate(total_ads=Count('ads'), filter=Q(ads__is_published=True))
+        user_qs = Users.objects.annotate(total_ads=Count('ads', filter=Q(ads__is_published=True)))
         paginator = Paginator(user_qs, settings.TOTAL_ON_PAGE)
         page_number = request.GET.get('page', 1)
         page_obj = paginator.get_page(page_number)
         response = {
-            "items": list(page_obj),
+            "items": list({
+                              'id': user.id,
+                              'username': user.username,
+                              'first_name': user.first_name,
+                              'last_name': user.last_name,
+                              'role': user.role,
+                              'age': user.age,
+                              'locations': list(user.locations.all().values_list("name", flat=True)),
+                              'total_ads': user.total_ads
+                          } for user in page_obj),
             "page": page_number,
-            "num_pages": paginator.num_pages,
-            "total": paginator.count
+            "total": paginator.count,
+            "per_page": settings.TOTAL_ON_PAGE
         }
 
-        return JsonResponse(response, safe=False, encoder=UsersEncoder)
-
-
+        return JsonResponse(response)
