@@ -2,10 +2,9 @@ from django.urls import path
 from rest_framework import routers
 
 from ads import views
-from ads.views import LocationViewSet
 
 router = routers.SimpleRouter()
-router.register('location', LocationViewSet)
+router.register('location', views.LocationViewSet)
 
 urlpatterns = [
     path('', views.index),

@@ -19,24 +19,25 @@ def index(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
+# GET, POST, PUT, PATCH and DELETE for Location
 class LocationViewSet(ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
 
 
-# GET and POST for users
+# GET and POST for Users
 class UserListCreateView(ListCreateAPIView):
     queryset = Users.objects.all()
     serializer_class = UserSerializer
 
 
-# GET for one user, PUT, PATCH, and DELETE
+# GET for one user, PUT, PATCH and DELETE
 class UserDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Users.objects.all()
     serializer_class = UserSerializer
 
 
-# GET and POST for ads
+# GET and POST for Ads
 class AdListCreateView(ListCreateAPIView):
     queryset = Ads.objects.all()
     serializer_class = AdsSerializer
@@ -65,7 +66,7 @@ class AdListCreateView(ListCreateAPIView):
         return super().get(self, request, *args, **kwargs)
 
 
-# GET for one ad, PUT, PATCH, and DELETE
+# GET for one ad, PUT, PATCH and DELETE
 class AdDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Ads.objects.all()
     serializer_class = AdsSerializer
