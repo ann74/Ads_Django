@@ -7,18 +7,73 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.viewsets import ModelViewSet
 
 from Ads_Django import settings
-from ads.models import Ads, Categories, AdsEncoder, CatEncoder, Users, UsersEncoder, Location
+from ads.models import Ads, Categories, CatEncoder, Users, Location
+from ads.serializers import UserSerializer, AdsSerializer, LocationSerializer
 
 
 def index(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
-# Общий класс для отображения списка объявлений, категорий и пользователей, с пагинацией
-class ModelListView(ListView):
-    encoder = None
+class LocationViewSet(ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+
+
+# GET and POST for users
+class UserListCreateView(ListCreateAPIView):
+    queryset = Users.objects.all()
+    serializer_class = UserSerializer
+
+
+# GET for one user, PUT, PATCH, and DELETE
+class UserDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+    queryset = Users.objects.all()
+    serializer_class = UserSerializer
+
+
+# GET and POST for ads
+class AdListCreateView(ListCreateAPIView):
+    queryset = Ads.objects.all()
+    serializer_class = AdsSerializer
+
+    def get(self, request, *args, **kwargs):
+        ad_category = request.GET.get('cat')
+        if ad_category:
+            self.queryset = self.queryset.filter(category_id=ad_category)
+
+        ad_text = request.GET.get('text')
+        if ad_text:
+            self.queryset = self.queryset.filter(name__icontains=ad_text)
+
+        ad_location = request.GET.get('location')
+        if ad_location:
+            self.queryset = self.queryset.filter(author__locations__name__icontains=ad_location)
+
+        price_from = request.GET.get('price_from')
+        price_to = request.GET.get('price_to')
+
+        if price_from:
+            self.queryset = self.queryset.filter(price__gte=price_from)
+        if price_to:
+            self.queryset = self.queryset.filter(price__lte=price_to)
+
+        return super().get(self, request, *args, **kwargs)
+
+
+# GET for one ad, PUT, PATCH, and DELETE
+class AdDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
+    queryset = Ads.objects.all()
+    serializer_class = AdsSerializer
+
+
+# GET for categories list
+class CatlListView(ListView):
+    model = Categories
 
     def get(self, request, *args, **kwargs):
         super().get(request, *args, **kwargs)
@@ -33,12 +88,12 @@ class ModelListView(ListView):
             "total": paginator.count
         }
 
-        return JsonResponse(response, safe=False, encoder=self.encoder)
+        return JsonResponse(response, safe=False, encoder=CatEncoder)
 
 
-# Общий класс для отображения одного объявления, категории и пользователя
-class ModelDetailView(DetailView):
-    encoder = None
+# GET for one category
+class CatDetailView(DetailView):
+    model = Categories
 
     def get(self, request, *args, **kwargs):
         try:
@@ -46,28 +101,10 @@ class ModelDetailView(DetailView):
         except Http404:
             return JsonResponse({"error": "Not found"}, status=404)
 
-        return JsonResponse(ad, safe=False, encoder=self.encoder)
+        return JsonResponse(ad, safe=False, encoder=CatEncoder)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class AdsCreateView(CreateView):
-    model = Ads
-    fields = ['name', 'author', 'price', 'description', 'is_published', 'category']
-
-    def post(self, request, *args, **kwargs):
-        ad_data = json.loads(request.body)
-        ad = Ads.objects.create(
-            name=ad_data['name'],
-            author_id=ad_data['author_id'],
-            price=ad_data['price'],
-            description=ad_data['description'],
-            is_published=ad_data['is_published'],
-            category_id=ad_data['category_id'],
-        )
-
-        return JsonResponse(ad, safe=False, encoder=AdsEncoder)
-
-
+# POST for category
 @method_decorator(csrf_exempt, name='dispatch')
 class CatCreateView(CreateView):
     model = Categories
@@ -80,47 +117,7 @@ class CatCreateView(CreateView):
         return JsonResponse(cat, safe=False, encoder=CatEncoder)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class UserCreateView(CreateView):
-    model = Users
-    fields = ['username', 'password', 'first_name', 'last_name', 'role', 'age', 'locations']
-
-    def post(self, request, *args, **kwargs):
-        user_data = json.loads(request.body)
-        user = Users.objects.create(
-            username=user_data['username'],
-            first_name=user_data['first_name'],
-            last_name=user_data['last_name'],
-            password=user_data['password'],
-            role=user_data['role'],
-            age=user_data['age'],
-        )
-        for loc in user_data['locations']:
-            loc_obj, created = Location.objects.get_or_create(name=loc)
-            user.locations.add(loc_obj)
-            user.save()
-
-        return JsonResponse(user, safe=False, encoder=UsersEncoder)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class AdsUpdateView(UpdateView):
-    model = Ads
-    fields = ['name', 'price', 'description', 'is_published', 'category']
-
-    def patch(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
-        ad_data = json.loads(request.body)
-        self.object.name = ad_data['name']
-        self.object.price = ad_data['price']
-        self.object.description = ad_data['description']
-        self.object.is_published = ad_data['is_published']
-        self.object.category_id = ad_data['category_id']
-        self.object.save()
-
-        return JsonResponse(self.object, safe=False, encoder=AdsEncoder)
-
-
+# PATCH for category
 @method_decorator(csrf_exempt, name='dispatch')
 class CatUpdateView(UpdateView):
     model = Categories
@@ -135,31 +132,10 @@ class CatUpdateView(UpdateView):
         return JsonResponse(self.object, safe=False, encoder=CatEncoder)
 
 
+# DLETE for category
 @method_decorator(csrf_exempt, name='dispatch')
-class UserUpdateView(UpdateView):
-    model = Users
-    fields = ['username', 'password', 'first_name', 'last_name', 'age', 'locations']
-
-    def patch(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
-        user_data = json.loads(request.body)
-        self.object.username = user_data['username']
-        self.object.first_name = user_data['first_name']
-        self.object.last_name = user_data['last_name']
-        self.object.password = user_data['password']
-        self.object.age = user_data['age']
-
-        for loc in user_data['locations']:
-            loc_obj, created = Location.objects.get_or_create(name=loc)
-            self.object.locations.add(loc_obj)
-            self.object.save()
-
-        return JsonResponse(self.object, safe=False, encoder=UsersEncoder)
-
-
-# Общий класс для удаления объявления, категории и пользователя
-@method_decorator(csrf_exempt, name='dispatch')
-class ModelDeleteView(DeleteView):
+class CatDeleteView(DeleteView):
+    model = Categories
     success_url = '/'
 
     def delete(self, request, *args, **kwargs):
@@ -168,19 +144,6 @@ class ModelDeleteView(DeleteView):
             return JsonResponse({"status": "ok"}, status=200)
         except ProtectedError:
             return JsonResponse({"status": "Not deleted"}, status=404)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class AdsImageView(UpdateView):
-    model = Ads
-    fields = ['name', 'image']
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.image = request.FILES['image']
-        self.object.save()
-
-        return JsonResponse(self.object, safe=False, encoder=AdsEncoder)
 
 
 # Класс для вывода пользователей м количеством опубликованных объявлений у каждого

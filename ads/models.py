@@ -59,6 +59,7 @@ class Ads(models.Model):
     image = models.ImageField(upload_to='images/', null=True, verbose_name='Изображение')
     category = models.ForeignKey(Categories, on_delete=models.PROTECT, verbose_name='Категория')
 
+
     def __str__(self):
         return self.name
 
@@ -66,35 +67,6 @@ class Ads(models.Model):
         verbose_name = 'Объявление'
         verbose_name_plural = 'Объявления'
         ordering = ['-price']
-
-
-class UsersEncoder(DjangoJSONEncoder):
-    def default(self, o):
-        if isinstance(o, Users):
-            return {'id': o.id,
-                    'username': o.username,
-                    'first_name': o.first_name,
-                    'last_name': o.last_name,
-                    'role': o.role,
-                    'age': o.age,
-                    'locations': list(map(str, o.locations.all()))}
-        return super().default(o)
-
-
-class AdsEncoder(DjangoJSONEncoder):
-    def default(self, o):
-        if isinstance(o, Ads):
-            return {'id': o.id,
-                    'name': o.name,
-                    'author_id': o.author_id,
-                    'author': o.author.first_name,
-                    'price': o.price,
-                    'description': o.description,
-                    'is_published': o.is_published,
-                    'image': o.image.url if o.image else None,
-                    'category_id': o.category_id}
-        return super().default(o)
-
 
 class CatEncoder(DjangoJSONEncoder):
     def default(self, o):
@@ -104,3 +76,29 @@ class CatEncoder(DjangoJSONEncoder):
         return super().default(o)
 
 
+# class UsersEncoder(DjangoJSONEncoder):
+#     def default(self, o):
+#         if isinstance(o, Users):
+#             return {'id': o.id,
+#                     'username': o.username,
+#                     'first_name': o.first_name,
+#                     'last_name': o.last_name,
+#                     'role': o.role,
+#                     'age': o.age,
+#                     'locations': list(map(str, o.locations.all()))}
+#         return super().default(o)
+#
+#
+# class AdsEncoder(DjangoJSONEncoder):
+#     def default(self, o):
+#         if isinstance(o, Ads):
+#             return {'id': o.id,
+#                     'name': o.name,
+#                     'author_id': o.author_id,
+#                     'author': o.author.first_name,
+#                     'price': o.price,
+#                     'description': o.description,
+#                     'is_published': o.is_published,
+#                     'image': o.image.url if o.image else None,
+#                     'category_id': o.category_id}
+#         return super().default(o)
