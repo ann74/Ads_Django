@@ -14,10 +14,14 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def is_valid(self, *, raise_exception=False):
+        self.initial_data = self.initial_data.copy()
         self._locations = self.initial_data.pop('locations', [])
-        return super().is_valid(raise_exception=raise_exception)
+        result = super().is_valid(raise_exception=raise_exception)
+        self.initial_data.update({'locations': self._locations})
+        return result
 
     def create(self, validated_data):
+        validated_data.pop('locations')
         user = Users.objects.create(**validated_data)
         for loc in self._locations:
             loc_obj, _ = Location.objects.get_or_create(name=loc)
