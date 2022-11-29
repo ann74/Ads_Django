@@ -21,7 +21,8 @@ from Ads_Django import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('ads.urls'))
+    path('', include('ads.urls')),
+    path('user/', include('authentication.urls')),
 ]
 
 if settings.DEBUG:

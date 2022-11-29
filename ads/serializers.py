@@ -1,55 +1,13 @@
 from rest_framework import serializers
 
-from ads.models import Users, Location, Ads, Categories
-
-
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length=20, write_only=True)
-    locations = serializers.SlugRelatedField(queryset=Location.objects.all(),
-                                             slug_field='name',
-                                             many=True, required=False)
-
-    class Meta:
-        model = Users
-        fields = '__all__'
-
-    def is_valid(self, *, raise_exception=False):
-        self.initial_data = self.initial_data.copy()
-        self._locations = self.initial_data.pop('locations', [])
-        result = super().is_valid(raise_exception=raise_exception)
-        self.initial_data.update({'locations': self._locations})
-        return result
-
-    def create(self, validated_data):
-        validated_data.pop('locations')
-        user = Users.objects.create(**validated_data)
-        for loc in self._locations:
-            loc_obj, _ = Location.objects.get_or_create(name=loc)
-            user.locations.add(loc_obj)
-        user.save()
-        return user
-
-    def save(self):
-        user = super().save()
-        user.locations.clear()
-        for loc in self._locations:
-            loc_obj, _ = Location.objects.get_or_create(name=loc)
-            user.locations.add(loc_obj)
-        user.save()
-        return user
+from ads.models import Ads, Categories
+from authentication.models import User
 
 
 class AdsSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(queryset=Users.objects.all(), slug_field='username')
+    author = serializers.SlugRelatedField(queryset=User.objects.all(), slug_field='username')
     category = serializers.SlugRelatedField(queryset=Categories.objects.all(), slug_field='name')
 
     class Meta:
         model = Ads
-        fields = '__all__'
-
-
-class LocationSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Location
         fields = '__all__'
