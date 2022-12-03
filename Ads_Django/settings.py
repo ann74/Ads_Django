@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'ads.apps.AdsConfig',
     'authentication.apps.AuthenticationConfig',
 ]
@@ -144,6 +145,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 5,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
 }
 

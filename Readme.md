@@ -8,3 +8,19 @@
 }
 ```
 
+### 2. Авторизация по JWT
+
+**Request:**  POST /user/token/
+```
+{
+    "password": "rthg125",
+    "username": "petr555"
+}
+```
+**Request:**  POST /user/token/refresh/
+```
+{
+    "refresh": "JWT_token refresh из предыдущего запроса"
+}
+```
+
