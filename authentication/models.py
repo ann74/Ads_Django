@@ -23,7 +23,7 @@ class User(AbstractUser):
     ]
 
     role = models.CharField(max_length=20, choices=ROLE, default='member', verbose_name='Роль')
-    age = models.IntegerField(verbose_name='Возраст')
+    age = models.IntegerField(null=True, verbose_name='Возраст')
     locations = models.ManyToManyField(Location, verbose_name='Адрес')
 
     def __str__(self):

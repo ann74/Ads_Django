@@ -2,7 +2,10 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.views import View
+from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from Ads_Django import settings
@@ -26,6 +29,12 @@ class UserListCreateView(ListCreateAPIView):
 class UserDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class Logout(APIView):
+    def post(self, request):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
 
 
 # Класс для вывода пользователей м количеством опубликованных объявлений у каждого

@@ -4,7 +4,6 @@ from authentication.models import Location, User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length=20, write_only=True)
     locations = serializers.SlugRelatedField(queryset=Location.objects.all(),
                                              slug_field='name',
                                              many=True, required=False)
@@ -21,8 +20,9 @@ class UserSerializer(serializers.ModelSerializer):
         return result
 
     def create(self, validated_data):
-        validated_data.pop('locations')
+        # validated_data.pop('locations')
         user = User.objects.create(**validated_data)
+        user.set_password(validated_data["password"])
         for loc in self._locations:
             loc_obj, _ = Location.objects.get_or_create(name=loc)
             user.locations.add(loc_obj)
