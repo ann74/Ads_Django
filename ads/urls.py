@@ -1,7 +1,11 @@
 from django.urls import path
+from rest_framework import routers
 
 from ads import views
 
+
+router = routers.SimpleRouter()
+router.register('selection', views.AdsSelectionViewSet)
 
 urlpatterns = [
     path('', views.index),
@@ -13,3 +17,5 @@ urlpatterns = [
     path('cat/<int:pk>/update/', views.CatUpdateView.as_view()),
     path('cat/<int:pk>/delete/', views.CatDeleteView.as_view()),
 ]
+
+urlpatterns += router.urls

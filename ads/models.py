@@ -33,6 +33,19 @@ class Ads(models.Model):
         ordering = ['-price']
 
 
+class AdsSelection(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Наименование')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Владелец')
+    items = models.ManyToManyField(Ads, verbose_name='Объявление')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'Подборка'
+        verbose_name_plural = 'Подборки'
+
+
 class CatEncoder(DjangoJSONEncoder):
     def default(self, o):
         if isinstance(o, Categories):

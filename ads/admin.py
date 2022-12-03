@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from ads.models import Ads, Categories
+from ads.models import Ads, Categories, AdsSelection
 
 
 class AdsAdmin(admin.ModelAdmin):
@@ -11,3 +11,4 @@ class AdsAdmin(admin.ModelAdmin):
 
 admin.site.register(Ads, AdsAdmin)
 admin.site.register(Categories)
+admin.site.register(AdsSelection)

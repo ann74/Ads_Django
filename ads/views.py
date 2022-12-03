@@ -7,11 +7,13 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 
 from Ads_Django import settings
-from ads.models import Ads, Categories, CatEncoder
-from ads.serializers import AdsSerializer
+from ads.models import Ads, Categories, CatEncoder, AdsSelection
+from ads.permissions import AdUpdateDeletePermission, SelectionUpdateDeletePermission
+from ads.serializers import AdsSerializer, AdsSelectionListSerializer, AdsSelectionDetailSerializer, AdsSelectionUpdateSerializer
 
 
 def index(request):
@@ -22,6 +24,12 @@ def index(request):
 class AdListCreateView(ListCreateAPIView):
     queryset = Ads.objects.all()
     serializer_class = AdsSerializer
+
+    def get_permissions(self, *args, **kwargs):
+        if self.request.method in ['POST']:
+            return [IsAuthenticated()]
+        else:
+            return []
 
     def get(self, request, *args, **kwargs):
         ad_category = request.GET.get('cat')
@@ -46,11 +54,49 @@ class AdListCreateView(ListCreateAPIView):
 
         return super().get(self, request, *args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
+        request.data.update(author=request.user)
+        return super().post(request, *args, **kwargs)
+
 
 # GET for one ad, PUT, PATCH and DELETE
 class AdDetailUpdateDeleteView(RetrieveUpdateDestroyAPIView):
     queryset = Ads.objects.all()
     serializer_class = AdsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self, *args, **kwargs):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [AdUpdateDeletePermission()]
+        else:
+            return []
+
+
+# GET, POST, PUT, PATCH and DELETE for AdsSelection
+class AdsSelectionViewSet(ModelViewSet):
+    queryset = AdsSelection.objects.all()
+    serializer_class = AdsSelectionUpdateSerializer
+
+
+    def get_permissions(self, *args, **kwargs):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [IsAuthenticated(), SelectionUpdateDeletePermission()]
+        elif self.action in ['retrieve', 'create']:
+            return [IsAuthenticated()]
+        else:
+            return []
+
+    def list(self, request, *args, **kwargs):
+        self.serializer_class = AdsSelectionListSerializer
+        return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        self.serializer_class = AdsSelectionDetailSerializer
+        return super().retrieve(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        request.data.update(owner=request.user)
+        return super().create(request, *args, **kwargs)
 
 
 # GET for categories list

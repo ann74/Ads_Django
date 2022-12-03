@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 class Location(models.Model):
     name = models.CharField(max_length=100, verbose_name='Адрес')
     lat = models.DecimalField(max_digits=8, decimal_places=6, null=True, verbose_name='Широта')
