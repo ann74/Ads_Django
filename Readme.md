@@ -160,3 +160,104 @@
 **Request:**  DELETE /ad/29/
 
 **Headers:** Authorization: Bearer (JWT_token из запроса токена)
+
+### 6. Валидация
+- Добавьте поле slug, длина которого не более 10 символов, а значения уникальны
+
+**Request:**  POST /cat/create/
+```
+{
+    "name": "Котики1",
+    "slug": "catss"
+}
+```
+такой слаг уже есть в базе
+```
+{
+    "name": "Бытовая техника",
+    "slug": "home_appliances"
+}
+```
+```
+{
+    "name": "Бытовая техника",
+    "slug": "appliance"
+}
+```
+- Поле name объявления не может быть пустым и должно содержать не менее 10 символов.
+
+**Request:**  POST /ad/
+```
+{
+    "category": "Котики",
+    "name": "Котята",
+    "price": 500,
+    "is_published": false
+}
+```
+- Поле description объявления может быть пустым
+
+**Request:**  POST /ad/
+```
+{
+    "category": "Котики",
+    "name": "Котята в хорошие руки",
+    "price": 500,
+    "is_published": false
+}
+```
+- Значение поля price объявления не может быть меньше 0.
+
+**Request:**  POST /ad/
+```
+{
+    "category": "Котики",
+    "name": "Котята в хорошие руки",
+    "price": -500,
+    "is_published": false
+}
+```
+- Значение поля is_published при создании объявления не может быть True
+
+**Request:**  POST /ad/
+```
+{
+    "category": "Котики",
+    "name": "Сибирский кот",
+    "price": 500,
+    "is_published": true
+}
+```
+- Добавьте пользователям поле birth_date и запретите регистрироваться пользователям младше 9 лет.
+**Request:**  POST /user/
+```
+{
+    "password": "456238",
+    "username": "serg888",
+    "email": "serg888@yandex.ru",
+    "birthday": "2018-10-15"
+}
+```
+
+- Добавьте поле email, сделайте его уникальным и запретите регистрацию с почтового адреса в домене rambler.ru
+
+**Request:**  POST /user/
+```
+{
+    "password": "12345",
+    "username": "oleg168",
+    "email": "petr5@yandex.ru"
+}
+```
+Такой email есть в базе
+
+**Request:**  POST /user/
+```
+{
+    "password": "12345",
+    "username": "oleg168",
+    "email": "petr5@rambler.ru"
+}
+```
+
+### 7. Тесты

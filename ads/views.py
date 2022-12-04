@@ -77,7 +77,6 @@ class AdsSelectionViewSet(ModelViewSet):
     queryset = AdsSelection.objects.all()
     serializer_class = AdsSelectionUpdateSerializer
 
-
     def get_permissions(self, *args, **kwargs):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             return [IsAuthenticated(), SelectionUpdateDeletePermission()]
@@ -140,7 +139,7 @@ class CatCreateView(CreateView):
 
     def post(self, request, *args, **kwargs):
         cat_data = json.loads(request.body)
-        cat = Categories.objects.create(name=cat_data['name'])
+        cat = Categories.objects.create(name=cat_data['name'], slug=cat_data['slug'])
 
         return JsonResponse(cat, safe=False, encoder=CatEncoder)
 
@@ -155,6 +154,7 @@ class CatUpdateView(UpdateView):
         super().post(request, *args, **kwargs)
         cat_data = json.loads(request.body)
         self.object.name = cat_data['name']
+        self.object.slug = cat_data['slug']
         self.object.save()
 
         return JsonResponse(self.object, safe=False, encoder=CatEncoder)

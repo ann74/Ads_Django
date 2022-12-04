@@ -1,12 +1,32 @@
+from datetime import date
+
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from authentication.models import Location, User
+
+
+def email_validator(value):
+    if '@rambler.ru' in value:
+        raise serializers.ValidationError('Не допустимый домен почты')
+
+
+class DataValidation:
+    def __init__(self, valid_age):
+        self.valid_age = valid_age
+
+    def __call__(self, value):
+        if (date.today() - value).days // 365 < self.valid_age:
+            raise serializers.ValidationError(f'Нельзя регистрироваться пользователям младше {self.valid_age} лет')
 
 
 class UserSerializer(serializers.ModelSerializer):
     locations = serializers.SlugRelatedField(queryset=Location.objects.all(),
                                              slug_field='name',
                                              many=True, required=False)
+    email = serializers.EmailField(required=False, validators=[UniqueValidator(queryset=User.objects.all()),
+                                                               email_validator])
+    birthday = serializers.DateField(required=False, validators=[DataValidation(9)])
 
     class Meta:
         model = User

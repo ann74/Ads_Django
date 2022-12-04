@@ -24,6 +24,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE, default='member', verbose_name='Роль')
     age = models.IntegerField(null=True, verbose_name='Возраст')
     locations = models.ManyToManyField(Location, verbose_name='Адрес')
+    birthday = models.DateField(null=True)
 
     def __str__(self):
         return self.username
