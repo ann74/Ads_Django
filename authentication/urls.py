@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from authentication.views import UserListCreateView, UserDetailUpdateDeleteView, UserAdsDetailView, LocationViewSet, Logout
 
+
 router = routers.SimpleRouter()
 router.register('location', LocationViewSet)
 
