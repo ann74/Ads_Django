@@ -1,4 +1,6 @@
 Бэкап базы [django_ads_db.sql1.sql](django_ads_db.sql1.sql)
+<details>
+<summary>Пункты 1-5 ...</summary>
 
 ### 1. Модель пользователя переписана на наследование от AbstraсtUser
 Создание пользователя
@@ -160,6 +162,7 @@
 **Request:**  DELETE /ad/29/
 
 **Headers:** Authorization: Bearer (JWT_token из запроса токена)
+</details>
 
 ### 6. Валидация
 - Добавьте поле slug, длина которого не более 10 символов, а значения уникальны
